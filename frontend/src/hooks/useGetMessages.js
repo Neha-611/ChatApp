@@ -13,8 +13,21 @@ const useGetMessages = () => {
 				const res = await fetch(`/api/messages/${selectedConversation._id}`);
 				const data = await res.json();
 				if (data.error) throw new Error(data.error);
-				setMessages(data);
+
+				console.log("API response:", data);
+				console.log("Is data an array?", Array.isArray(data));
+				
+					if (Array.isArray(data)) {
+					setMessages(data); // If API returns array directly
+				} else if (data.messages && Array.isArray(data.messages)) {
+					setMessages(data.messages); // If API returns {messages: [...]}
+				} else {
+					console.error("API returned non-array data:", data);
+					setMessages([]); // Fallback to empty array
+				}
 			} catch (error) {
+				console.error("Error fetching messages:", error);
+				setMessages([]);
 				toast.error(error.message);
 			} finally {
 				setLoading(false);
