@@ -7,7 +7,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
 	cors: {
-		origin: ["http://localhost:3000"],
+		origin: ["http://localhost:3000", "https://chatapp-387n.onrender.com"],
 		methods: ["GET", "POST"],
 	},
 });
@@ -30,14 +30,14 @@ io.on("connection", (socket) => {
 	socket.on("sendMessage", (messageData) => {
         console.log("Message received:", messageData);
         
-        const { receiverId, message, senderId } = messageData;
+        const { receiverId, message, senderId, messageData: fullMessageData } = messageData;
         const receiverSocketId = getReceiverSocketId(receiverId);
         
         if (receiverSocketId) {
-            io.to(receiverSocketId).emit("newMessage", messageData);
+            io.to(receiverSocketId).emit("newMessage", fullMessageData || messageData);
         }
         
-        socket.emit("newMessage", messageData);
+        socket.emit("newMessage", fullMessageData || messageData);
     });
 
 	// socket.on() is used to listen to the events. can be used both on client and server side
