@@ -9,6 +9,10 @@ const useSendMessage = () => {
 	const { socket } = useSocketContext();
 
 	const sendMessage = async (message) => {
+		console.log("=== SENDING MESSAGE ===");
+		console.log("Current messages before send:", messages);
+		console.log("Is messages array?", Array.isArray(messages));
+		
 		setLoading(true);
 		try {
 			const res = await fetch(`/api/messages/send/${selectedConversation._id}`, {
@@ -21,20 +25,29 @@ const useSendMessage = () => {
 			const data = await res.json();
 			if (data.error) throw new Error(data.error);
 
-			setMessages([...messages, data]);
+			console.log("Message saved to DB:", data);
+			
+			// Safety check before updating messages
+			if (!Array.isArray(messages)) {
+				console.error("Messages is not an array before updating!");
+				setMessages([data]);
+			} else {
+				setMessages([...messages, data]);
+			}
 
+			// Emit via socket
 			if (socket) {
 				console.log("Emitting message via socket:", data);
 				socket.emit("sendMessage", {
 					receiverId: selectedConversation._id,
 					message: message,
 					senderId: data.senderId,
-					messageData: data // Include the full message data
+					messageData: data
 				});
 			}
 
-			
 		} catch (error) {
+			console.error("Error in sendMessage:", error);
 			toast.error(error.message);
 		} finally {
 			setLoading(false);
