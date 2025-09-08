@@ -7,39 +7,31 @@ import notificationSound from "../assets/sounds/notification.mp3";
 
 const useListenMessages = () => {
 	const { socket } = useSocketContext();
-	const { messages, setMessages } = useConversation();
+	const { setMessages } = useConversation(); // Remove messages from destructuring
 
 	useEffect(() => {
-		socket?.on("newMessage", (newMessage) => {
-			console.log("=== NEW MESSAGE RECEIVED ===");
-			console.log("New message:", newMessage);
-			console.log("Current messages:", messages);
-			console.log("Current messages type:", typeof messages);
-			console.log("Is current messages array?", Array.isArray(messages));
-			
-			// Safety check before processing
-			if (!Array.isArray(messages)) {
-				console.error("Current messages is not an array! Resetting to empty array.");
-				setMessages([newMessage]);
-				return;
-			}
+		const handleNewMessage = (newMessage) => {
+			console.log("New message received:", newMessage);
 			newMessage.shouldShake = true;
+			
 			const sound = new Audio(notificationSound);
 			sound.play();
-			setMessages((prevMessages) =>{
-				console.log("Previous messages in setter:", prevMessages);
+			
+			// Use functional update - this gets the latest messages automatically
+			setMessages((prevMessages) => {
+				console.log("PrevMessages in functional update:", prevMessages);
 				console.log("Is prevMessages array?", Array.isArray(prevMessages));
 				
-				// Double safety check
+				// Ensure it's always an array
 				const safeMessages = Array.isArray(prevMessages) ? prevMessages : [];
-				const newMessagesArray = [...safeMessages, newMessage];
-				
-				console.log("New messages array:", newMessagesArray);
-				return newMessagesArray;
+				return [...safeMessages, newMessage];
 			});
-		});
+		};
 
-		return () => socket?.off("newMessage");
-	}, [socket, setMessages, messages]);
+		socket?.on("newMessage", handleNewMessage);
+
+		return () => socket?.off("newMessage", handleNewMessage);
+	}, [socket, setMessages]); // REMOVED 'messages' from dependencies - this was causing the issue
 };
+
 export default useListenMessages;
